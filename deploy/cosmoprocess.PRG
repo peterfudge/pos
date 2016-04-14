@@ -51,8 +51,7 @@ nPageScriptMode = 1
 FUNCTION OnProcessInit
 
 *!* LOCAL lcScriptName, llForceLogin
-	THIS.InitSession("POS",1800,.t.)
-	
+	THIS.InitSession("POS",1800,.t.)	
 *!*
 *!*	lcScriptName = LOWER(JUSTFNAME(Request.GetPhysicalPath()))
 *!*	llIgnoreLoginRequest = INLIST(lcScriptName,"default","login","logout")
@@ -163,9 +162,14 @@ FUNCTION CustomerLookup()
 ************************
 
 lcLoggedIn = Session.GetSessionVar("loggedin")
+*WAIT WINDOW lcLoggedin
 IF lcLoggedin <> 'true'
-	Response.Redirect("login.cosmo")		
+	Response.Redirect("signin.cosmo")		
 ENDIF 
+
+
+lcUserName = ALLTRIM(Session.GetSessionVar("username"))
+lcUserDisplay = "Logged in as: "+lcUserName
 
 
 Response.WriteLn( THIS.PageHeaderTemplate("Customer Lookup"))
@@ -272,9 +276,50 @@ ENDFUNC
 
 
 *******************************
-FUNCTION Login()
+FUNCTION signin()
 
-Response.WriteLn( THIS.LoginTemplate("Login Page"))
+lcUserDisplay = ""
+
+Response.WriteLn( THIS.PageHeaderTemplate("Login"))
+
+Response.ExpandTemplate()
+
+Response.Write( this.pagefootertemplate())
+
+
+ENDFUNC
+
+*******************************
+FUNCTION logincheck()
+
+Session.SetSessionVar("loggedin","")
+Session.SetSessionVar("user","")
+Session.SetSessionVar("username","")
+	IF USED('xtest')
+		USE IN xtest
+	ENDIF 
+
+lcUser = Request.Form("user")
+lcPass = UPPER(Request.Form("pwd"))
+
+SELECT userid,name,passwd FROM e:\pro32\syuuser INTO CURSOR xtest WHERE ALLTRIM(userid) == alltrim(lcuser) AND ALLTRIM(passwd) == ALLTRIM(lcPass)
+
+SELECT xtest
+
+IF RECCOUNT() > 0
+	*WAIT WINDOW "yeah baby"
+	Session.SetSessionVar("loggedin","true")
+	Session.SetSessionVar("user",xtest.userid)
+	Session.SetSessionVar("username",xtest.name)
+	lcuser = ''
+	lcpass = ''
+	Response.Redirect("customerlookup.cosmo")
+ELSE 
+	Response.Redirect("signin.cosmo")
+ENDIF 
+
+
+
 
 
 
